@@ -58,12 +58,18 @@ _Explication :_
 
 ***1.*** Lorsque vous compilez ce premier programme, quelle fonction est annoncée comme dangereuse et présente la première faille pour effectuer l'attaque ROP ? 
 
+Lorsquee l'on compile ce premier programme, la fonctions gets est annoncé comme dangereuse:
+vulnerable.c:(.text+0x26): warning: the `gets' function is dangerous and should not be used.
+
+
 On remarque donc la présence d'un `buffer overflow`, nous allons désormais passer à ce binaire un gros buffer à l'aide de la commande suivante :  
 ```
 perl -e 'print "A"x500' | ./rop
 ``` 
 
 ***2.*** Quel type d'erreur classique avec `buffer overflow` cherchons nous à renvoyer avec cette manipulation ?
+
+L'erreur classique qu'on cherche a renvoyé avec "buffer overflow" est une erreur de segmentation (segmentation fault).
 
 ### Des mécanismes de défense
 
@@ -77,6 +83,8 @@ readelf -l rop
 ```
 
 ***3.*** Quelle est la preuve que l'exécution du code malveillant est bien empêchée ?
+
+La secion GNU_STACK a seulement les flags W,R et non X, donc n'est pas exécutable.
 
 > ASLR est une technique qui vise à rendre plus difficile 
 l'exploitation de vulnérabilités logicielles en modifiant aléatoirement la disposition des composants clés de l'espace d'adressage d'un processus lors de son démarrage.
@@ -97,6 +105,13 @@ ROPgadget --help
 
 ***3.*** Quelle commande utilisez-vous pour trouver le nombre de gadget à partir de l'exécutable généré plus tôt ?
 
+```
+ROPgadget --binary rop
+```
+
+On trouve un total de 36470 gadgets unique à partir de l'éxécutable généré plutôt.
+
+
 En utilisant cette simple commande avec `grep`, vous pourrez désormais localiser tous les gadgets dont vous avez besoin ! Vous pourrez ainsi trouver les gadgets vous permettant d'écrire par exemple (EDX, EAX)*¹.
 
 > *¹ : *EDX & EAX sont des registres du processeur. Les processeurs x86, couramment utilisés dans les ordinateurs personnels, disposent de plusieurs registres, dont EDX et EAX. Ces registres sont utilisés pour stocker temporairement des données pendant l'exécution du programme. Dans le contexte de l'attaque ROP, EDX et EAX sont des registres que l'attaquant pourrait utiliser pour manipuler des données ou des adresses mémoire.*
@@ -105,7 +120,11 @@ Néanmoins un problème persiste qui est de trouver un endroit ou écrire en mé
 
 ***4.*** Avec les commandes vues précédemment, vous êtes désormais en capacité de trouver la commande vous permettant de trouver l'adresse de `.data` ?
 
+```
+readelf -S rop | grep " .data "
+```
 
+permet de trouver l'adresse de .data.
 
 ## Exercice (Get a Reverse Shell) :
 
@@ -116,6 +135,8 @@ Tout à l'heure nous avons obtenu un exécutable **statique** de notre programme
 gcc -c vulnerable.c -o dynamic.c
 ``` 
 ***1.*** Quelle est la différence entre les deux fichiers ?
+
+
 
 __Explication__: _Dans le fichier statique toutes les libraries qu'il utilise sont compilées dedans, dans un unique fichier. Le dynamique par contre, fait appel aux libraries pendant l'exécution du programme. Cela est important car avec ROP, les ressources dont dispose l'attaquant dependent du contenu du fichier. Le fait d'avoir les libraries, signifie donc, plus de gadgets possibles._
 
